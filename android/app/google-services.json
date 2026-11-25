@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "552363521098",
+    "project_id": "tast-c7c8f",
+    "storage_bucket": "tast-c7c8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552363521098:android:9922a9767e9d85debde2b3",
+        "android_client_info": {
+          "package_name": "com.example.aa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAh6vHn8C7VGkyUGfwVA00TQ9a8zSAcCgQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
