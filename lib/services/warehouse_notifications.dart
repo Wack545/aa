@@ -19,12 +19,18 @@ class WarehouseNotifications {
   static final WarehouseNotifications instance = WarehouseNotifications._();
 
   static const String _channelId = 'warehouse';
+  static const String _channelName = 'คลังสีน้ำ';
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  bool _started = false;
   bool _ready = false;
   int _nextId = 0;
 
   Future<void> start() async {
+    if (_started) {
+      return;
+    }
+    _started = true;
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -50,7 +56,7 @@ class WarehouseNotifications {
           ?.createNotificationChannel(
             const AndroidNotificationChannel(
               _channelId,
-              'คลังสีน้ำ',
+              _channelName,
               description: 'แจ้งเตือนเมื่อสินค้าเข้า ปรับราคา เปลี่ยนสถานะ หรือออกจากคลัง',
               importance: Importance.high,
             ),
@@ -67,13 +73,14 @@ class WarehouseNotifications {
     try {
       final messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(alert: true, badge: true, sound: true);
+      // แจ้งเตือนตอนแอปเปิดอยู่ให้ _onForegroundMessage แสดงผ่าน local notification
+      // ถ้าเปิด alert ตรงนี้ iOS/macOS จะเด้งซ้ำสองอัน
       await messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
+        alert: false,
         badge: true,
-        sound: true,
+        sound: false,
       );
       FirebaseMessaging.onMessage.listen(_onForegroundMessage);
-      FirebaseMessaging.onMessageOpenedApp.listen(_onForegroundMessage);
       // ignore: deprecated_member_use
       messaging.onTokenRefresh.listen((token) {
         debugPrint('fcm_token: $token');
@@ -88,8 +95,9 @@ class WarehouseNotifications {
 
   void _onForegroundMessage(RemoteMessage message) {
     final notification = message.notification;
-    final title = notification?.title ?? message.data['title'] ?? '';
-    final body = notification?.body ?? message.data['body'] ?? '';
+    final title =
+        notification?.title ?? message.data['title']?.toString() ?? '';
+    final body = notification?.body ?? message.data['body']?.toString() ?? '';
     debugPrint('ได้รับข้อความ FCM: $title $body');
     if (title.isEmpty && body.isEmpty) {
       return;
@@ -127,21 +135,25 @@ class WarehouseNotifications {
     if (!_ready) {
       return;
     }
-    await _plugin.show(
-      id: _nextId++,
-      title: title,
-      body: body,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          'คลังสีน้ำ',
-          importance: Importance.high,
-          priority: Priority.high,
+    try {
+      await _plugin.show(
+        id: _nextId++,
+        title: title,
+        body: body,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            _channelName,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+          macOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-        macOS: DarwinNotificationDetails(),
-      ),
-    );
+      );
+    } catch (error) {
+      debugPrint('แสดงการแจ้งเตือนไม่สำเร็จ: $error');
+    }
   }
 
   String _name(Product product) {
